@@ -51,10 +51,10 @@ dev = ["pytest>=7.0", "ruff>=0.1"]
 opshield = "opshield.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/aigraf/opshield"
-Documentation = "https://github.com/aigraf/opshield#readme"
-Issues = "https://github.com/aigraf/opshield/issues"
-Changelog = "https://github.com/aigraf/opshield/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/alicelik-games/opshield"
+Documentation = "https://github.com/alicelik-games/opshield#readme"
+Issues = "https://github.com/alicelik-games/opshield/issues"
+Changelog = "https://github.com/alicelik-games/opshield/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/opshield"]
