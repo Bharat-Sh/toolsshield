@@ -34,13 +34,17 @@ CREATE INDEX IF NOT EXISTS idx_actions_blocked ON actions(blocked);
 class ActionLogger:
     """Logs every action to a SQLite database for audit and analysis."""
 
-    def __init__(self, db_path: str | Path = "agentshield.db") -> None:
+    def __init__(self, db_path: str | Path = "agentshield.db", masker=None) -> None:
         self._path = Path(db_path)
         self._conn = sqlite3.connect(str(self._path))
         self._conn.row_factory = sqlite3.Row
         self._conn.executescript(_SCHEMA)
+        self._masker = masker
 
     def log(self, result: ActionResult) -> None:
+        args = result.action.args
+        if self._masker:
+            args = self._masker.mask(args)
         self._conn.execute(
             """INSERT OR REPLACE INTO actions
                (id, tool_name, args, risk, cost, blocked, block_reason, error, output, snapshot_id, timestamp)
@@ -48,7 +52,7 @@ class ActionLogger:
             (
                 result.action.id,
                 result.action.tool_name,
-                json.dumps(result.action.args, default=str),
+                json.dumps(args, default=str),
                 result.action.risk.value,
                 result.cost,
                 int(result.blocked),

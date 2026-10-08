@@ -12,6 +12,7 @@ from agentshield.action import Action, ActionResult, RiskLevel
 from agentshield.budget import BudgetTracker
 from agentshield.config import parse_config, rules_from_config
 from agentshield.logger import ActionLogger
+from agentshield.masking import DataMasker
 from agentshield.ratelimit import RateLimiter, ToolLimit
 from agentshield.rules import RuleEngine
 from agentshield.snapshot import SnapshotStore
@@ -64,13 +65,14 @@ class AgentShield:
         self._snapshots = SnapshotStore(max_snapshots=max_snapshots)
         self._history: list[ActionResult] = []
         self._tool_states: dict[str, Any] = {}
-        self._logger = ActionLogger(db_path) if db_path else None
+        self._logger = ActionLogger(db_path, masker=None) if db_path else None
         self._rate_limiter = RateLimiter(
             global_rpm=global_rpm,
             global_rph=global_rph,
             tool_limits=tool_limits or {},
         )
         self._notifier = EventNotifier()
+        self._masker: DataMasker | None = None
 
     @classmethod
     def from_config(cls, config: dict[str, Any]) -> "AgentShield":
@@ -123,6 +125,17 @@ class AgentShield:
     @property
     def notifier(self) -> EventNotifier:
         return self._notifier
+
+    def set_masker(self, masker: DataMasker) -> None:
+        """Attach a DataMasker for log/webhook PII redaction."""
+        self._masker = masker
+        if self._logger:
+            self._logger._masker = masker
+
+    def _mask_args(self, args: dict) -> dict:
+        if self._masker:
+            return self._masker.mask(args)
+        return args
 
     # -- Tool decorator --
 
