@@ -12,17 +12,35 @@ requires-python = ">=3.11"
 authors = [
     { name = "AiGraf" },
 ]
-keywords = ["ai", "agent", "safety", "guardrails", "rollback", "testing"]
+keywords = ["ai", "agent", "safety", "guardrails", "rollback", "testing", "cost-control"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
+
+[project.optional-dependencies]
+openai = ["openai>=1.0"]
+langchain = ["langchain-core>=0.1"]
+all = ["openai>=1.0", "langchain-core>=0.1"]
+dev = ["pytest>=7.0", "ruff>=0.1"]
+
+[project.scripts]
+agentshield = "agentshield.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/aigraf/agentshield"
+Documentation = "https://github.com/aigraf/agentshield#readme"
+Issues = "https://github.com/aigraf/agentshield/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentshield"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

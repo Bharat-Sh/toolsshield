@@ -10,6 +10,8 @@ from typing import Any, Callable
 
 from agentshield.action import Action, ActionResult, RiskLevel
 from agentshield.budget import BudgetTracker
+from agentshield.config import parse_config, rules_from_config
+from agentshield.logger import ActionLogger
 from agentshield.rules import RuleEngine
 from agentshield.snapshot import SnapshotStore
 
@@ -46,6 +48,7 @@ class AgentShield:
         mode: str = "production",
         on_block: OnBlockCallback | None = None,
         max_snapshots: int = 1000,
+        db_path: str | None = None,
     ) -> None:
         self._mode = Mode(mode)
         self._auto_snapshot = auto_snapshot
@@ -55,6 +58,22 @@ class AgentShield:
         self._snapshots = SnapshotStore(max_snapshots=max_snapshots)
         self._history: list[ActionResult] = []
         self._tool_states: dict[str, Any] = {}
+        self._logger = ActionLogger(db_path) if db_path else None
+
+    @classmethod
+    def from_config(cls, config: dict[str, Any]) -> "AgentShield":
+        """Create an AgentShield from a config dict."""
+        parsed = parse_config(config)
+        instance = cls(
+            budget=parsed["budget"],
+            auto_snapshot=parsed["auto_snapshot"],
+            mode=parsed["mode"],
+            max_snapshots=parsed["max_snapshots"],
+            db_path=parsed.get("db_path"),
+        )
+        for rule in parsed["extra_rules"]:
+            instance._rules.add_rule(rule)
+        return instance
 
     # -- Properties --
 
@@ -139,6 +158,8 @@ class AgentShield:
                 block_reason=f"CRITICAL risk blocked: {'; '.join(reasons)}",
             )
             self._history.append(result)
+            if self._logger:
+                self._logger.log(result)
             return result
 
         if action.risk == RiskLevel.HIGH and self._on_block:
@@ -150,6 +171,8 @@ class AgentShield:
                     block_reason=f"Blocked by user: {'; '.join(reasons)}",
                 )
                 self._history.append(result)
+                if self._logger:
+                    self._logger.log(result)
                 return result
 
         if self._budget.would_exceed(cost):
@@ -160,6 +183,8 @@ class AgentShield:
                 f"budget: ${self._budget.budget:.2f}, action cost: ${cost:.2f})",
             )
             self._history.append(result)
+            if self._logger:
+                self._logger.log(result)
             return result
 
         snapshot_id = None
@@ -177,6 +202,8 @@ class AgentShield:
             )
             self._budget.record(action.id, action.tool_name, cost)
             self._history.append(result)
+            if self._logger:
+                self._logger.log(result)
             return result
 
         try:
@@ -197,6 +224,8 @@ class AgentShield:
 
         self._budget.record(action.id, action.tool_name, cost)
         self._history.append(result)
+        if self._logger:
+            self._logger.log(result)
         return result
 
     # -- Rollback --
