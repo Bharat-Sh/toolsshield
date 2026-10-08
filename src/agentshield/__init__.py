@@ -4,6 +4,7 @@ from agentshield.shield import AgentShield
 from agentshield.action import Action, ActionResult, RiskLevel
 from agentshield.async_shield import AsyncAgentShield
 from agentshield.logger import ActionLogger
+from agentshield.multiagent import AgentPool
 from agentshield.policy import load_policy, validate_policy
 from agentshield.ratelimit import RateLimiter, ToolLimit
 from agentshield.retry import RetryPolicy
@@ -13,6 +14,7 @@ from agentshield.config import rules_from_config
 __all__ = [
     "AgentShield",
     "AsyncAgentShield",
+    "AgentPool",
     "Action",
     "ActionResult",
     "RiskLevel",
