@@ -9,7 +9,10 @@ from enum import Enum
 from typing import Any, Callable
 
 from agentshield.action import Action, ActionResult, RiskLevel
+from agentshield.approval import ApprovalManager
 from agentshield.budget import BudgetTracker
+from agentshield.capabilities import CapabilityManager
+from agentshield.circuitbreaker import CircuitBreaker
 from agentshield.config import parse_config, rules_from_config
 from agentshield.logger import ActionLogger
 from agentshield.masking import DataMasker
@@ -73,6 +76,9 @@ class AgentShield:
         )
         self._notifier = EventNotifier()
         self._masker: DataMasker | None = None
+        self._circuit_breaker: CircuitBreaker | None = None
+        self._capabilities: CapabilityManager | None = None
+        self._approval: ApprovalManager | None = None
 
     @classmethod
     def from_config(cls, config: dict[str, Any]) -> "AgentShield":
@@ -137,6 +143,15 @@ class AgentShield:
             return self._masker.mask(args)
         return args
 
+    def set_circuit_breaker(self, cb: CircuitBreaker) -> None:
+        self._circuit_breaker = cb
+
+    def set_capabilities(self, caps: CapabilityManager) -> None:
+        self._capabilities = caps
+
+    def set_approval(self, approval: ApprovalManager) -> None:
+        self._approval = approval
+
     # -- Tool decorator --
 
     def tool(
@@ -188,6 +203,39 @@ class AgentShield:
         risk_override: RiskLevel | None,
         retry_policy: RetryPolicy | None = None,
     ) -> ActionResult:
+        if self._capabilities:
+            cap_ok, cap_reason = self._capabilities.check(
+                getattr(self, '_agent_name', ''), action.tool_name,
+                args=action.args, cost=cost,
+            )
+            if not cap_ok:
+                result = ActionResult(
+                    action=action, blocked=True,
+                    block_reason=f"Capability denied: {cap_reason}",
+                )
+                self._history.append(result)
+                if self._logger:
+                    self._logger.log(result)
+                self._notifier.emit("action_blocked", {
+                    "tool": action.tool_name, "reason": result.block_reason,
+                })
+                return result
+
+        if self._circuit_breaker:
+            cb_ok, cb_reason = self._circuit_breaker.should_allow(action.tool_name)
+            if not cb_ok:
+                result = ActionResult(
+                    action=action, blocked=True,
+                    block_reason=f"Circuit breaker: {cb_reason}",
+                )
+                self._history.append(result)
+                if self._logger:
+                    self._logger.log(result)
+                self._notifier.emit("action_blocked", {
+                    "tool": action.tool_name, "reason": result.block_reason,
+                })
+                return result
+
         detected_risk, reasons = self._rules.evaluate(action)
         action.risk = risk_override or detected_risk
 
@@ -290,6 +338,8 @@ class AgentShield:
                 snapshot_id=snapshot_id,
                 cost=cost,
             )
+            if self._circuit_breaker:
+                self._circuit_breaker.record_failure(action.tool_name)
             self._notifier.emit("action_error", {
                 "tool": action.tool_name, "error": str(e),
             })
@@ -301,6 +351,8 @@ class AgentShield:
             self._logger.log(result)
 
         if result.success:
+            if self._circuit_breaker:
+                self._circuit_breaker.record_success(action.tool_name)
             self._notifier.emit("action_completed", {
                 "tool": action.tool_name, "cost": cost,
             })

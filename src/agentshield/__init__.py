@@ -2,7 +2,11 @@
 
 from agentshield.shield import AgentShield
 from agentshield.action import Action, ActionResult, RiskLevel
+from agentshield.approval import ApprovalManager
 from agentshield.async_shield import AsyncAgentShield
+from agentshield.capabilities import CapabilityManager
+from agentshield.circuitbreaker import CircuitBreaker, CircuitState
+from agentshield.compliance import ComplianceReporter
 from agentshield.logger import ActionLogger
 from agentshield.masking import DataMasker
 from agentshield.multiagent import AgentPool
@@ -17,8 +21,13 @@ __all__ = [
     "AgentShield",
     "AsyncAgentShield",
     "AgentPool",
+    "ApprovalManager",
     "Action",
     "ActionResult",
+    "CapabilityManager",
+    "CircuitBreaker",
+    "CircuitState",
+    "ComplianceReporter",
     "RiskLevel",
     "ActionLogger",
     "ActionReplayer",
