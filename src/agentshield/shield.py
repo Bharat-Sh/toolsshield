@@ -12,6 +12,7 @@ from agentshield.action import Action, ActionResult, RiskLevel
 from agentshield.approval import ApprovalManager
 from agentshield.budget import BudgetTracker
 from agentshield.capabilities import CapabilityManager
+from agentshield.chaos import ChaosEngine
 from agentshield.circuitbreaker import CircuitBreaker
 from agentshield.config import parse_config, rules_from_config
 from agentshield.logger import ActionLogger
@@ -20,6 +21,7 @@ from agentshield.ratelimit import RateLimiter, ToolLimit
 from agentshield.rules import RuleEngine
 from agentshield.snapshot import SnapshotStore
 from agentshield.retry import RetryPolicy, execute_with_retry
+from agentshield.tracing import Tracer
 from agentshield.webhooks import EventNotifier
 
 
@@ -79,6 +81,8 @@ class AgentShield:
         self._circuit_breaker: CircuitBreaker | None = None
         self._capabilities: CapabilityManager | None = None
         self._approval: ApprovalManager | None = None
+        self._tracer: Tracer | None = None
+        self._chaos: ChaosEngine | None = None
 
     @classmethod
     def from_config(cls, config: dict[str, Any]) -> "AgentShield":
@@ -151,6 +155,12 @@ class AgentShield:
 
     def set_approval(self, approval: ApprovalManager) -> None:
         self._approval = approval
+
+    def set_tracer(self, tracer: Tracer) -> None:
+        self._tracer = tracer
+
+    def set_chaos(self, chaos: ChaosEngine) -> None:
+        self._chaos = chaos
 
     # -- Tool decorator --
 
@@ -320,6 +330,41 @@ class AgentShield:
                 self._logger.log(result)
             return result
 
+        span = None
+        if self._tracer:
+            span = self._tracer.start_span(
+                f"tool.{action.tool_name}",
+                attributes={"tool.name": action.tool_name, "tool.cost": cost,
+                            "tool.risk": action.risk.value},
+            )
+
+        t0 = time.time()
+
+        if self._chaos and self._chaos.enabled:
+            fault = self._chaos.should_inject(action.tool_name, action.args)
+            if fault:
+                try:
+                    self._chaos.inject(fault, action.tool_name)
+                except Exception as e:
+                    result = ActionResult(
+                        action=action, error=str(e),
+                        snapshot_id=snapshot_id, cost=cost,
+                    )
+                    if self._circuit_breaker:
+                        self._circuit_breaker.record_failure(action.tool_name)
+                    self._notifier.emit("action_error", {
+                        "tool": action.tool_name, "error": str(e),
+                    })
+                    self._budget.record(action.id, action.tool_name, cost)
+                    self._rate_limiter.record(action.tool_name)
+                    self._history.append(result)
+                    if self._logger:
+                        self._logger.log(result)
+                    if span:
+                        span.set_attribute("error.message", str(e))
+                        self._tracer.end_span(span, "error")
+                    return result
+
         try:
             if retry_policy:
                 output, _errors = execute_with_retry(func, args, kwargs, retry_policy)
@@ -361,6 +406,13 @@ class AgentShield:
             self._notifier.emit("budget_warning", {
                 "spent": self._budget.spent, "budget": self._budget.budget,
             })
+
+        if span:
+            span.set_attribute("tool.duration_ms", (time.time() - t0) * 1000)
+            span.set_attribute("tool.blocked", result.blocked)
+            if result.error:
+                span.set_attribute("error.message", result.error)
+            self._tracer.end_span(span, "error" if result.error else "ok")
 
         return result
 

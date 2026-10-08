@@ -5,8 +5,10 @@ from agentshield.action import Action, ActionResult, RiskLevel
 from agentshield.approval import ApprovalManager
 from agentshield.async_shield import AsyncAgentShield
 from agentshield.capabilities import CapabilityManager
+from agentshield.chaos import ChaosEngine, FaultType
 from agentshield.circuitbreaker import CircuitBreaker, CircuitState
 from agentshield.compliance import ComplianceReporter
+from agentshield.forecast import CostForecaster
 from agentshield.logger import ActionLogger
 from agentshield.masking import DataMasker
 from agentshield.multiagent import AgentPool
@@ -14,6 +16,8 @@ from agentshield.policy import load_policy, validate_policy
 from agentshield.ratelimit import RateLimiter, ToolLimit
 from agentshield.replay import ActionReplayer
 from agentshield.retry import RetryPolicy
+from agentshield.scoring import AgentScorer, PoolScorer
+from agentshield.tracing import Tracer
 from agentshield.webhooks import EventNotifier
 from agentshield.config import rules_from_config
 
@@ -21,13 +25,18 @@ __all__ = [
     "AgentShield",
     "AsyncAgentShield",
     "AgentPool",
+    "AgentScorer",
     "ApprovalManager",
     "Action",
     "ActionResult",
     "CapabilityManager",
+    "ChaosEngine",
     "CircuitBreaker",
     "CircuitState",
     "ComplianceReporter",
+    "CostForecaster",
+    "FaultType",
+    "PoolScorer",
     "RiskLevel",
     "ActionLogger",
     "ActionReplayer",
@@ -35,6 +44,7 @@ __all__ = [
     "RateLimiter",
     "ToolLimit",
     "RetryPolicy",
+    "Tracer",
     "EventNotifier",
     "load_policy",
     "validate_policy",
