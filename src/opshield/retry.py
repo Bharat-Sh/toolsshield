@@ -2,7 +2,7 @@
 
 Usage:
     policy = RetryPolicy(max_retries=3, backoff_base=1.0, backoff_max=30.0)
-    shield = AgentShield(budget=5.00)
+    shield = OpShield(budget=5.00)
 
     @shield.tool(cost=0.03, retry=policy)
     def flaky_api(query: str) -> str:

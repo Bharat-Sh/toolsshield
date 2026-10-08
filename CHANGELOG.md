@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to AgentShield are documented here.
+All notable changes to OpShield are documented here.
 
 ## [0.2.0] - 2026-10-08
 
@@ -29,7 +29,7 @@ All notable changes to AgentShield are documented here.
 ## [0.1.0] - 2026-10-08
 
 ### Added — Phase 1: Core
-- `AgentShield` main class with tool decorator
+- `OpShield` main class with tool decorator
 - Risk classification engine (LOW/MEDIUM/HIGH/CRITICAL)
 - Budget tracking with per-action cost
 - State snapshots and rollback
@@ -47,7 +47,7 @@ All notable changes to AgentShield are documented here.
 - Sliding-window rate limiter (global RPM/RPH, per-tool limits)
 - Webhook/event notification system (HTTP + callbacks)
 - Anthropic Claude SDK integration
-- AsyncAgentShield with async_tool decorator
+- AsyncOpShield with async_tool decorator
 
 ### Added — Phase 4: Policy & Dashboard
 - Policy-as-code (JSON/YAML files)

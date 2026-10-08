@@ -1,16 +1,16 @@
-# AgentShield
+# OpShield
 
 **The safety layer between AI agents and the real world.**
 
-AgentShield intercepts every tool call your AI agent makes and provides rollback, cost control, rate limiting, circuit breakers, approval workflows, distributed tracing, chaos testing, and compliance reporting — so agents can work autonomously without causing damage.
+OpShield intercepts every tool call your AI agent makes and provides rollback, cost control, rate limiting, circuit breakers, approval workflows, distributed tracing, chaos testing, and compliance reporting — so agents can work autonomously without causing damage.
 
 **Zero mandatory dependencies. One `pip install`. Works with every major agent framework.**
 
-> **Market context:** With Guardrails AI acquired by Harvey (Sept 2026) and the AI agent safety market projected to grow from $610M to $6.85B at 41% CAGR, AgentShield fills the gap as a comprehensive, framework-agnostic agent operations platform.
+> **Market context:** With Guardrails AI acquired by Harvey (Sept 2026) and the AI agent safety market projected to grow from $610M to $6.85B at 41% CAGR, OpShield fills the gap as a comprehensive, framework-agnostic agent operations platform.
 
-## Why AgentShield?
+## Why OpShield?
 
-| Problem | AgentShield Solution |
+| Problem | OpShield Solution |
 |---------|---------------------|
 | Agent runs `DROP TABLE` | Auto-blocked by risk classification |
 | Agent overspends API budget | Budget limits + cost forecasting |
@@ -29,27 +29,27 @@ AgentShield intercepts every tool call your AI agent makes and provides rollback
 ## Install
 
 ```bash
-pip install agentshield
+pip install opshield
 ```
 
 With framework integrations:
 
 ```bash
-pip install agentshield[openai]      # OpenAI Agents SDK
-pip install agentshield[anthropic]   # Anthropic Claude SDK
-pip install agentshield[langchain]   # LangChain
-pip install agentshield[crewai]      # CrewAI
-pip install agentshield[autogen]     # Microsoft AutoGen
-pip install agentshield[yaml]        # YAML policy files
-pip install agentshield[all]         # Everything
+pip install opshield[openai]      # OpenAI Agents SDK
+pip install opshield[anthropic]   # Anthropic Claude SDK
+pip install opshield[langchain]   # LangChain
+pip install opshield[crewai]      # CrewAI
+pip install opshield[autogen]     # Microsoft AutoGen
+pip install opshield[yaml]        # YAML policy files
+pip install opshield[all]         # Everything
 ```
 
 ## Quick Start
 
 ```python
-from agentshield import AgentShield
+from opshield import OpShield
 
-shield = AgentShield(budget=5.00, auto_snapshot=True)
+shield = OpShield(budget=5.00, auto_snapshot=True)
 
 @shield.tool(cost=0.03)
 def query_db(sql: str) -> str:
@@ -95,14 +95,14 @@ Define rules in JSON or YAML files:
 ```
 
 ```python
-from agentshield import load_policy
+from opshield import load_policy
 shield = load_policy("policy.json")
 ```
 
 ### Multi-Agent Support
 
 ```python
-from agentshield import AgentPool
+from opshield import AgentPool
 
 pool = AgentPool(default_budget=5.00)
 researcher = pool.register("researcher", budget=3.00)
@@ -116,9 +116,9 @@ pool.over_budget()  # ["researcher"] if over budget
 ### Rate Limiting
 
 ```python
-from agentshield import AgentShield, ToolLimit
+from opshield import OpShield, ToolLimit
 
-shield = AgentShield(
+shield = OpShield(
     budget=10.00,
     global_rpm=60,                                    # 60 calls/min globally
     tool_limits={"send_email": ToolLimit(rpm=5)},     # 5 emails/min
@@ -128,7 +128,7 @@ shield = AgentShield(
 ### Retry with Backoff
 
 ```python
-from agentshield import RetryPolicy
+from opshield import RetryPolicy
 
 policy = RetryPolicy(max_retries=3, backoff_base=1.0, jitter=0.5)
 
@@ -140,7 +140,7 @@ def flaky_api(query: str) -> str:
 ### Sensitive Data Masking
 
 ```python
-from agentshield import DataMasker
+from opshield import DataMasker
 
 masker = DataMasker()
 shield.set_masker(masker)
@@ -156,7 +156,7 @@ masker.add_pattern("project_id", r"PROJ-\d{6}", "PROJ-******")
 Auto-disable tools that fail repeatedly (CLOSED → OPEN → HALF_OPEN):
 
 ```python
-from agentshield import CircuitBreaker
+from opshield import CircuitBreaker
 
 cb = CircuitBreaker(failure_threshold=5, reset_timeout=60.0)
 shield.set_circuit_breaker(cb)
@@ -167,7 +167,7 @@ shield.set_circuit_breaker(cb)
 ### Human-in-the-Loop Approval
 
 ```python
-from agentshield import ApprovalManager
+from opshield import ApprovalManager
 
 approver = ApprovalManager(default_timeout=30.0)
 approver.require_approval("send_email", timeout=60.0)
@@ -183,7 +183,7 @@ approver.approve(request_id, approver="admin@company.com")
 Fine-grained tool access control per agent:
 
 ```python
-from agentshield import CapabilityManager
+from opshield import CapabilityManager
 
 caps = CapabilityManager()
 caps.grant("researcher", allow=["search", "read_file"])
@@ -195,7 +195,7 @@ shield.set_capabilities(caps)
 ### Compliance & Audit Reports
 
 ```python
-from agentshield import ComplianceReporter
+from opshield import ComplianceReporter
 
 reporter = ComplianceReporter(db_path="audit.db")
 report = reporter.generate_report(start="2026-01-01", end="2026-12-31")
@@ -211,7 +211,7 @@ html = reporter.to_html()      # Full HTML report
 OpenTelemetry-compatible span system:
 
 ```python
-from agentshield import Tracer
+from opshield import Tracer
 
 tracer = Tracer(service_name="my-agent")
 shield.set_tracer(tracer)
@@ -231,7 +231,7 @@ tracer.export_otlp()               # OTLP-compatible dict
 ### Cost Forecasting
 
 ```python
-from agentshield import CostForecaster
+from opshield import CostForecaster
 
 forecaster = CostForecaster(shield)
 report = forecaster.forecast()
@@ -244,7 +244,7 @@ print(report.trend)                    # "increasing" / "stable" / "decreasing"
 ### Agent Scoring & Benchmarking
 
 ```python
-from agentshield import AgentScorer, PoolScorer
+from opshield import AgentScorer, PoolScorer
 
 scorer = AgentScorer(shield, agent_name="my-bot")
 report = scorer.score()
@@ -261,7 +261,7 @@ print(pool_scorer.summary())   # Ranked leaderboard
 ### Web Dashboard
 
 ```bash
-agentshield --db audit.db dashboard --port 8080
+opshield --db audit.db dashboard --port 8080
 ```
 
 Real-time web UI showing actions, blocks, budget, and rate limits.
@@ -269,12 +269,12 @@ Real-time web UI showing actions, blocks, budget, and rate limits.
 ### Prometheus Metrics
 
 ```python
-from agentshield.metrics import start_metrics_server
+from opshield.metrics import start_metrics_server
 start_metrics_server(shield, port=9090)
 # Scrape http://localhost:9090/metrics
 ```
 
-Exports: `agentshield_actions_total`, `agentshield_actions_blocked_total`, `agentshield_budget_spent_dollars`, per-tool and per-agent labels.
+Exports: `opshield_actions_total`, `opshield_actions_blocked_total`, `opshield_budget_spent_dollars`, per-tool and per-agent labels.
 
 ### Webhook Notifications
 
@@ -294,7 +294,7 @@ shield.notifier.on("action_blocked", lambda event, data: print(f"Alert: {data}")
 Test agent resilience with controlled fault injection:
 
 ```python
-from agentshield import ChaosEngine, FaultType
+from opshield import ChaosEngine, FaultType
 
 chaos = ChaosEngine()
 shield.set_chaos(chaos)
@@ -316,7 +316,7 @@ chaos.add_fault("*", FaultType.LATENCY, latency_ms=500, probability=0.1)
 ### Action Replay
 
 ```python
-from agentshield.replay import ActionReplayer
+from opshield.replay import ActionReplayer
 
 replayer = ActionReplayer(db_path="audit.db", executors={"run_sql": my_fn})
 report = replayer.replay_all(shield)
@@ -326,9 +326,9 @@ print(f"Match rate: {report.success_rate:.0%}")
 ### Async Support
 
 ```python
-from agentshield import AsyncAgentShield
+from opshield import AsyncOpShield
 
-shield = AsyncAgentShield(budget=5.00)
+shield = AsyncOpShield(budget=5.00)
 
 @shield.async_tool(cost=0.05)
 async def async_query(sql: str) -> str:
@@ -347,32 +347,32 @@ async def async_query(sql: str) -> str:
 
 ```python
 # OpenAI
-from agentshield.integrations.openai_agents import OpenAIShieldMiddleware
+from opshield.integrations.openai_agents import OpenAIShieldMiddleware
 middleware = OpenAIShieldMiddleware(shield=shield, executors={...})
 
 # Anthropic
-from agentshield.integrations.anthropic_sdk import AnthropicShieldMiddleware
+from opshield.integrations.anthropic_sdk import AnthropicShieldMiddleware
 middleware = AnthropicShieldMiddleware(shield=shield, executors={...})
 
 # LangChain
-from agentshield.integrations.langchain import shield_langchain_tools
+from opshield.integrations.langchain import shield_langchain_tools
 
 # CrewAI
-from agentshield.integrations.crewai import shield_crewai_tools
+from opshield.integrations.crewai import shield_crewai_tools
 
 # AutoGen
-from agentshield.integrations.autogen import shield_autogen_functions
+from opshield.integrations.autogen import shield_autogen_functions
 ```
 
 ## CLI
 
 ```bash
-agentshield stats                    # Action statistics
-agentshield logs                     # View action log
-agentshield logs --blocked           # Only blocked actions
-agentshield export audit.json        # Export to JSON
-agentshield validate policy.json     # Validate a policy file
-agentshield dashboard --port 8080    # Start web dashboard
+opshield stats                    # Action statistics
+opshield logs                     # View action log
+opshield logs --blocked           # Only blocked actions
+opshield export audit.json        # Export to JSON
+opshield validate policy.json     # Validate a policy file
+opshield dashboard --port 8080    # Start web dashboard
 ```
 
 ## Risk Levels
@@ -387,7 +387,7 @@ agentshield dashboard --port 8080    # Start web dashboard
 ## Architecture
 
 ```
-Agent → AgentShield → Tool
+Agent → OpShield → Tool
          ├── Capability Check (permissions)
          ├── Circuit Breaker (fail-fast)
          ├── Risk Classification (rules engine)
@@ -413,6 +413,10 @@ Agent → AgentShield → Tool
 - **5 framework integrations**
 - Works with Python 3.11+
 
+## Author
+
+**Ali Çelik** — [LinkedIn](https://linkedin.com/in/alicelik1980) · [Email](mailto:alicelik1980@gmail.com)
+
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE) for details.

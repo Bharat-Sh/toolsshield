@@ -1,9 +1,9 @@
-"""AgentShield demo — shows rollback, cost control, and test mode in action."""
+"""OpShield demo — shows rollback, cost control, and test mode in action."""
 
 import sys
 sys.path.insert(0, "src")
 
-from agentshield import AgentShield
+from opshield import OpShield
 
 # ============================================================
 # 1. Simulated database (in-memory)
@@ -32,7 +32,7 @@ def restore_db_state(state):
 # ============================================================
 # 2. Create shield with $1.00 budget
 # ============================================================
-shield = AgentShield(
+shield = OpShield(
     budget=1.00,
     auto_snapshot=True,
     mode="production",
@@ -77,7 +77,7 @@ def run_sql(query: str):
 # ============================================================
 def main():
     print("=" * 60)
-    print("  AgentShield Demo")
+    print("  OpShield Demo")
     print("=" * 60)
 
     # -- Normal operations --

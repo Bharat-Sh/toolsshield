@@ -1,10 +1,10 @@
 """Action replay: re-execute logged actions for debugging and audit.
 
 Reads action history from a SQLite audit log and replays them
-through an AgentShield instance, comparing results.
+through an OpShield instance, comparing results.
 
 Usage:
-    from agentshield.replay import ActionReplayer
+    from opshield.replay import ActionReplayer
 
     replayer = ActionReplayer(
         db_path="audit.db",
@@ -28,8 +28,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
-from agentshield.action import Action, ActionResult
-from agentshield.logger import ActionLogger
+from opshield.action import Action, ActionResult
+from opshield.logger import ActionLogger
 
 
 @dataclass

@@ -1,12 +1,12 @@
 """OpenAI Agents SDK integration.
 
-Wraps OpenAI function tools so every call passes through AgentShield.
+Wraps OpenAI function tools so every call passes through OpShield.
 
 Usage:
-    from agentshield import AgentShield
-    from agentshield.integrations.openai_agents import shield_openai_tools
+    from opshield import OpShield
+    from opshield.integrations.openai_agents import shield_openai_tools
 
-    shield = AgentShield(budget=5.00)
+    shield = OpShield(budget=5.00)
     tools = [my_tool_a, my_tool_b]
     safe_tools = shield_openai_tools(shield, tools)
 """
@@ -17,12 +17,12 @@ import functools
 import json
 from typing import Any, Callable
 
-from agentshield.action import Action, ActionResult
-from agentshield.shield import AgentShield
+from opshield.action import Action, ActionResult
+from opshield.shield import OpShield
 
 
 def shield_openai_tools(
-    shield: AgentShield,
+    shield: OpShield,
     tools: list[dict[str, Any]],
     cost_map: dict[str, float] | None = None,
 ) -> list[dict[str, Any]]:
@@ -36,7 +36,7 @@ def shield_openai_tools(
     through the shield.
 
     Args:
-        shield: The AgentShield instance.
+        shield: The OpShield instance.
         tools: List of OpenAI tool definitions.
         cost_map: Optional {tool_name: cost_per_call} mapping.
 
@@ -64,7 +64,7 @@ def shield_openai_tools(
 
 
 def execute_tool_call(
-    shield: AgentShield,
+    shield: OpShield,
     tool_name: str,
     arguments: str | dict,
     executor: Callable[..., Any],
@@ -74,7 +74,7 @@ def execute_tool_call(
     This is the function you call when the model returns a tool_call.
 
     Args:
-        shield: The AgentShield instance.
+        shield: The OpShield instance.
         tool_name: The function name from the tool call.
         arguments: The arguments (JSON string or dict).
         executor: The actual function to call.
@@ -109,7 +109,7 @@ class OpenAIShieldMiddleware:
 
     def __init__(
         self,
-        shield: AgentShield,
+        shield: OpShield,
         executors: dict[str, Callable],
         cost_map: dict[str, float] | None = None,
     ) -> None:

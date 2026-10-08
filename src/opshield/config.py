@@ -3,7 +3,7 @@
 Allows users to define rules via dicts or YAML-like structures.
 
 Usage:
-    shield = AgentShield.from_config({
+    shield = OpShield.from_config({
         "budget": 5.00,
         "mode": "production",
         "rules": [
@@ -22,8 +22,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from agentshield.action import Action, RiskLevel
-from agentshield.rules import Rule
+from opshield.action import Action, RiskLevel
+from opshield.rules import Rule
 
 
 def _make_checker(match: dict[str, Any]):
@@ -87,5 +87,5 @@ def parse_config(config: dict[str, Any]) -> dict[str, Any]:
         "auto_snapshot": config.get("auto_snapshot", True),
         "max_snapshots": config.get("max_snapshots", 1000),
         "extra_rules": rules_from_config(config.get("rules", [])),
-        "db_path": config.get("db_path", "agentshield.db"),
+        "db_path": config.get("db_path", "opshield.db"),
     }

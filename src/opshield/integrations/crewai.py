@@ -1,13 +1,13 @@
-"""AgentShield integration for CrewAI.
+"""OpShield integration for CrewAI.
 
 Zero-dependency: does not import crewai. Provides a ShieldedCrewTool
-that wraps any CrewAI-compatible tool through AgentShield.
+that wraps any CrewAI-compatible tool through OpShield.
 
 Usage:
-    from agentshield import AgentShield
-    from agentshield.integrations.crewai import ShieldedCrewTool, shield_crewai_tools
+    from opshield import OpShield
+    from opshield.integrations.crewai import ShieldedCrewTool, shield_crewai_tools
 
-    shield = AgentShield(budget=5.00)
+    shield = OpShield(budget=5.00)
 
     # Wrap individual tools
     tool = ShieldedCrewTool(
@@ -26,19 +26,19 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from agentshield.action import Action, ActionResult
-from agentshield.shield import AgentShield
+from opshield.action import Action, ActionResult
+from opshield.shield import OpShield
 
 
 class ShieldedCrewTool:
-    """A CrewAI-compatible tool that routes execution through AgentShield.
+    """A CrewAI-compatible tool that routes execution through OpShield.
 
     Mimics CrewAI's BaseTool interface without importing crewai.
     """
 
     def __init__(
         self,
-        shield: AgentShield,
+        shield: OpShield,
         name: str,
         description: str,
         func: Callable[..., str],
@@ -85,11 +85,11 @@ class ShieldedCrewTool:
 
 
 def shield_crewai_tools(
-    shield: AgentShield,
+    shield: OpShield,
     tools: list[Any],
     cost_map: dict[str, float] | None = None,
 ) -> list[ShieldedCrewTool]:
-    """Wrap a list of existing CrewAI tools with AgentShield protection.
+    """Wrap a list of existing CrewAI tools with OpShield protection.
 
     Each tool must have .name, .description, and ._run or .run attributes.
     """

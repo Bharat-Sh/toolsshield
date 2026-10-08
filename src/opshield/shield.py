@@ -1,4 +1,4 @@
-"""AgentShield — the main class that ties together rollback, cost control, and testing."""
+"""OpShield — the main class that ties together rollback, cost control, and testing."""
 
 from __future__ import annotations
 
@@ -8,21 +8,21 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Callable
 
-from agentshield.action import Action, ActionResult, RiskLevel
-from agentshield.approval import ApprovalManager
-from agentshield.budget import BudgetTracker
-from agentshield.capabilities import CapabilityManager
-from agentshield.chaos import ChaosEngine
-from agentshield.circuitbreaker import CircuitBreaker
-from agentshield.config import parse_config, rules_from_config
-from agentshield.logger import ActionLogger
-from agentshield.masking import DataMasker
-from agentshield.ratelimit import RateLimiter, ToolLimit
-from agentshield.rules import RuleEngine
-from agentshield.snapshot import SnapshotStore
-from agentshield.retry import RetryPolicy, execute_with_retry
-from agentshield.tracing import Tracer
-from agentshield.webhooks import EventNotifier
+from opshield.action import Action, ActionResult, RiskLevel
+from opshield.approval import ApprovalManager
+from opshield.budget import BudgetTracker
+from opshield.capabilities import CapabilityManager
+from opshield.chaos import ChaosEngine
+from opshield.circuitbreaker import CircuitBreaker
+from opshield.config import parse_config, rules_from_config
+from opshield.logger import ActionLogger
+from opshield.masking import DataMasker
+from opshield.ratelimit import RateLimiter, ToolLimit
+from opshield.rules import RuleEngine
+from opshield.snapshot import SnapshotStore
+from opshield.retry import RetryPolicy, execute_with_retry
+from opshield.tracing import Tracer
+from opshield.webhooks import EventNotifier
 
 
 class Mode(Enum):
@@ -33,11 +33,11 @@ class Mode(Enum):
 OnBlockCallback = Callable[[Action, list[str]], bool]
 
 
-class AgentShield:
+class OpShield:
     """Wrap agent tools with rollback, cost control, and testing.
 
     Usage:
-        shield = AgentShield(budget=5.00, auto_snapshot=True)
+        shield = OpShield(budget=5.00, auto_snapshot=True)
 
         @shield.tool(cost=0.03)
         def query_db(sql: str) -> str:
@@ -85,8 +85,8 @@ class AgentShield:
         self._chaos: ChaosEngine | None = None
 
     @classmethod
-    def from_config(cls, config: dict[str, Any]) -> "AgentShield":
-        """Create an AgentShield from a config dict."""
+    def from_config(cls, config: dict[str, Any]) -> "OpShield":
+        """Create an OpShield from a config dict."""
         parsed = parse_config(config)
 
         tool_limits = {}

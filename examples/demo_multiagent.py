@@ -7,14 +7,14 @@ rules, and monitoring — all managed from a single pool.
 import sys
 sys.path.insert(0, "src")
 
-from agentshield import AgentShield
-from agentshield.multiagent import AgentPool
-from agentshield.ratelimit import ToolLimit
+from opshield import OpShield
+from opshield.multiagent import AgentPool
+from opshield.ratelimit import ToolLimit
 
 
 def main():
     print("=" * 60)
-    print("  AgentShield Multi-Agent Demo")
+    print("  OpShield Multi-Agent Demo")
     print("=" * 60)
 
     # Create a pool with default settings

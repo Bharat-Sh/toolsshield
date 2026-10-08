@@ -1,14 +1,14 @@
-"""Demo: AgentShield with OpenAI-style agent loop.
+"""Demo: OpShield with OpenAI-style agent loop.
 
-This simulates how AgentShield works with OpenAI's function calling,
+This simulates how OpShield works with OpenAI's function calling,
 without requiring an actual OpenAI API key.
 """
 
 import sys
 sys.path.insert(0, "src")
 
-from agentshield import AgentShield
-from agentshield.integrations.openai_agents import OpenAIShieldMiddleware
+from opshield import OpShield
+from opshield.integrations.openai_agents import OpenAIShieldMiddleware
 
 
 # ============================================================
@@ -49,9 +49,9 @@ def run_sql(query: str) -> str:
 
 
 # ============================================================
-# 3. Set up AgentShield with config
+# 3. Set up OpShield with config
 # ============================================================
-shield = AgentShield.from_config({
+shield = OpShield.from_config({
     "budget": 2.00,
     "mode": "production",
     "db_path": "demo_audit.db",
@@ -103,7 +103,7 @@ class FakeToolCall:
 
 def main():
     print("=" * 60)
-    print("  AgentShield + OpenAI Integration Demo")
+    print("  OpShield + OpenAI Integration Demo")
     print("=" * 60)
 
     # Safe: read a file

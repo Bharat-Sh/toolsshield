@@ -1,13 +1,13 @@
-"""Tests for AgentShield core functionality."""
+"""Tests for OpShield core functionality."""
 
 import sys
 sys.path.insert(0, "src")
 
-from agentshield import AgentShield, RiskLevel
+from opshield import OpShield, RiskLevel
 
 
 def make_shield(**kwargs):
-    return AgentShield(budget=10.0, auto_snapshot=True, **kwargs)
+    return OpShield(budget=10.0, auto_snapshot=True, **kwargs)
 
 
 # -- Blocking --
@@ -51,7 +51,7 @@ def test_allows_safe_query():
 # -- Budget --
 
 def test_budget_tracking():
-    shield = AgentShield(budget=0.05)
+    shield = OpShield(budget=0.05)
 
     @shield.tool(cost=0.02)
     def cheap_call():
@@ -97,7 +97,7 @@ def test_rollback():
 # -- Test mode --
 
 def test_test_mode_no_side_effects():
-    shield = AgentShield(budget=10.0, mode="test")
+    shield = OpShield(budget=10.0, mode="test")
     called = {"value": False}
 
     @shield.tool(cost=0.01)

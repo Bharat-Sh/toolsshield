@@ -1,13 +1,13 @@
-"""AgentShield integration for Anthropic Claude SDK (tool_use).
+"""OpShield integration for Anthropic Claude SDK (tool_use).
 
 Zero-dependency: does not import anthropic. Works with the tool_use
 response format from Claude's Messages API.
 
 Usage:
-    from agentshield import AgentShield
-    from agentshield.integrations.anthropic_sdk import AnthropicShieldMiddleware
+    from opshield import OpShield
+    from opshield.integrations.anthropic_sdk import AnthropicShieldMiddleware
 
-    shield = AgentShield(budget=5.00)
+    shield = OpShield(budget=5.00)
     middleware = AnthropicShieldMiddleware(
         shield=shield,
         executors={"query_db": query_db_fn},
@@ -25,16 +25,16 @@ from __future__ import annotations
 import json
 from typing import Any, Callable
 
-from agentshield.action import Action, ActionResult
-from agentshield.shield import AgentShield
+from opshield.action import Action, ActionResult
+from opshield.shield import OpShield
 
 
 class AnthropicShieldMiddleware:
-    """Intercepts Anthropic Claude tool_use blocks through AgentShield."""
+    """Intercepts Anthropic Claude tool_use blocks through OpShield."""
 
     def __init__(
         self,
-        shield: AgentShield,
+        shield: OpShield,
         executors: dict[str, Callable[..., Any]] | None = None,
         cost_map: dict[str, float] | None = None,
     ) -> None:

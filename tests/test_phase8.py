@@ -8,8 +8,8 @@ import time
 
 sys.path.insert(0, "src")
 
-from agentshield import (
-    AgentShield,
+from opshield import (
+    OpShield,
     AgentScorer,
     ChaosEngine,
     CostForecaster,
@@ -17,7 +17,7 @@ from agentshield import (
     PoolScorer,
     Tracer,
 )
-from agentshield.multiagent import AgentPool
+from opshield.multiagent import AgentPool
 
 
 # -- Distributed Tracing --
@@ -107,7 +107,7 @@ def test_tracer_otlp_export():
 
 def test_tracer_in_shield():
     tracer = Tracer()
-    shield = AgentShield(budget=10.0)
+    shield = OpShield(budget=10.0)
     shield.set_tracer(tracer)
 
     @shield.tool(cost=0.01)
@@ -229,7 +229,7 @@ def test_chaos_in_shield():
     chaos = ChaosEngine(seed=1)
     chaos.add_fault("flaky", FaultType.ERROR, probability=1.0, error_message="chaos!")
 
-    shield = AgentShield(budget=10.0)
+    shield = OpShield(budget=10.0)
     shield.set_chaos(chaos)
 
     @shield.tool(cost=0.01)
@@ -273,7 +273,7 @@ def test_chaos_remove_faults():
 # -- Cost Forecasting --
 
 def test_forecast_empty():
-    shield = AgentShield(budget=10.0)
+    shield = OpShield(budget=10.0)
     forecaster = CostForecaster(shield)
     report = forecaster.forecast()
     assert report.total_spent == 0.0
@@ -282,7 +282,7 @@ def test_forecast_empty():
 
 
 def test_forecast_with_actions():
-    shield = AgentShield(budget=10.0)
+    shield = OpShield(budget=10.0)
 
     @shield.tool(cost=0.10)
     def search(q: str):
@@ -304,7 +304,7 @@ def test_forecast_with_actions():
 
 
 def test_forecast_summary():
-    shield = AgentShield(budget=5.0)
+    shield = OpShield(budget=5.0)
 
     @shield.tool(cost=0.50)
     def expensive(x: str):
@@ -321,7 +321,7 @@ def test_forecast_summary():
 
 
 def test_forecast_trend_detection():
-    shield = AgentShield(budget=100.0)
+    shield = OpShield(budget=100.0)
 
     @shield.tool(cost=0.01)
     def cheap(x: str):
@@ -344,7 +344,7 @@ def test_forecast_trend_detection():
 # -- Agent Scoring --
 
 def test_scorer_perfect_agent():
-    shield = AgentShield(budget=100.0)
+    shield = OpShield(budget=100.0)
 
     @shield.tool(cost=0.01)
     def safe_op(x: str):
@@ -362,7 +362,7 @@ def test_scorer_perfect_agent():
 
 
 def test_scorer_risky_agent():
-    shield = AgentShield(budget=10.0)
+    shield = OpShield(budget=10.0)
 
     @shield.tool(cost=0.01)
     def danger(sql: str):
@@ -379,7 +379,7 @@ def test_scorer_risky_agent():
 
 
 def test_scorer_no_actions():
-    shield = AgentShield(budget=10.0)
+    shield = OpShield(budget=10.0)
     scorer = AgentScorer(shield)
     report = scorer.score()
     assert report.overall_score == 100
@@ -387,7 +387,7 @@ def test_scorer_no_actions():
 
 
 def test_scorer_to_dict():
-    shield = AgentShield(budget=10.0)
+    shield = OpShield(budget=10.0)
 
     @shield.tool(cost=0.01)
     def op(x: str):

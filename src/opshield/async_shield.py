@@ -1,4 +1,4 @@
-"""Async version of AgentShield for use with asyncio-based agent frameworks."""
+"""Async version of OpShield for use with asyncio-based agent frameworks."""
 
 from __future__ import annotations
 
@@ -7,15 +7,15 @@ import functools
 import inspect
 from typing import Any, Callable
 
-from agentshield.action import Action, ActionResult, RiskLevel
-from agentshield.shield import AgentShield
+from opshield.action import Action, ActionResult, RiskLevel
+from opshield.shield import OpShield
 
 
-class AsyncAgentShield(AgentShield):
-    """AgentShield with async tool support.
+class AsyncOpShield(OpShield):
+    """OpShield with async tool support.
 
     Usage:
-        shield = AsyncAgentShield(budget=5.00)
+        shield = AsyncOpShield(budget=5.00)
 
         @shield.async_tool(cost=0.03)
         async def query_db(sql: str) -> str:

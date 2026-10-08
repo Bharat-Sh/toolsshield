@@ -3,14 +3,14 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "agentshield"
+name = "opshield"
 version = "0.2.0"
 description = "AI agent safety platform: rollback, cost control, circuit breakers, tracing, compliance, and chaos testing."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
 authors = [
-    { name = "AiGraf" },
+    { name = "Ali Çelik", email = "alicelik1980@gmail.com" },
 ]
 keywords = [
     "ai", "agent", "safety", "guardrails", "rollback", "testing",
@@ -48,16 +48,16 @@ all = [
 dev = ["pytest>=7.0", "ruff>=0.1"]
 
 [project.scripts]
-agentshield = "agentshield.cli:main"
+opshield = "opshield.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/aigraf/agentshield"
-Documentation = "https://github.com/aigraf/agentshield#readme"
-Issues = "https://github.com/aigraf/agentshield/issues"
-Changelog = "https://github.com/aigraf/agentshield/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/aigraf/opshield"
+Documentation = "https://github.com/aigraf/opshield#readme"
+Issues = "https://github.com/aigraf/opshield/issues"
+Changelog = "https://github.com/aigraf/opshield/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/agentshield"]
+packages = ["src/opshield"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

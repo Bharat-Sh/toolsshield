@@ -33,7 +33,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from agentshield.shield import AgentShield
+from opshield.shield import OpShield
 
 
 def _load_yaml(path: Path) -> dict[str, Any]:
@@ -42,7 +42,7 @@ def _load_yaml(path: Path) -> dict[str, Any]:
     except ImportError:
         raise ImportError(
             "PyYAML is required for YAML policy files. "
-            "Install it with: pip install agentshield[yaml]"
+            "Install it with: pip install opshield[yaml]"
         )
     with open(path) as f:
         return yaml.safe_load(f)
@@ -53,8 +53,8 @@ def _load_json(path: Path) -> dict[str, Any]:
         return json.load(f)
 
 
-def load_policy(path: str | Path) -> AgentShield:
-    """Load an AgentShield instance from a policy file.
+def load_policy(path: str | Path) -> OpShield:
+    """Load an OpShield instance from a policy file.
 
     Supports .yaml, .yml, and .json files.
     """
@@ -71,7 +71,7 @@ def load_policy(path: str | Path) -> AgentShield:
     else:
         raise ValueError(f"Unsupported policy file format: {suffix} (use .yaml, .yml, or .json)")
 
-    return AgentShield.from_config(config)
+    return OpShield.from_config(config)
 
 
 def validate_policy(path: str | Path) -> list[str]:

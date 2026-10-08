@@ -1,4 +1,4 @@
-"""Webhook and callback notification system for AgentShield events.
+"""Webhook and callback notification system for OpShield events.
 
 Supports HTTP webhooks and in-process callbacks for events like:
 - action_blocked: an action was blocked by rules or budget

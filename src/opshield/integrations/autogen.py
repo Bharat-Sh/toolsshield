@@ -1,13 +1,13 @@
-"""AgentShield integration for Microsoft AutoGen.
+"""OpShield integration for Microsoft AutoGen.
 
 Zero-dependency: does not import autogen. Provides a wrapper that
-intercepts AutoGen function calls through AgentShield.
+intercepts AutoGen function calls through OpShield.
 
 Usage:
-    from agentshield import AgentShield
-    from agentshield.integrations.autogen import shield_autogen_functions
+    from opshield import OpShield
+    from opshield.integrations.autogen import shield_autogen_functions
 
-    shield = AgentShield(budget=5.00)
+    shield = OpShield(budget=5.00)
 
     # Your functions that AutoGen agents will call
     def search(query: str) -> str:
@@ -31,16 +31,16 @@ from __future__ import annotations
 import functools
 from typing import Any, Callable
 
-from agentshield.action import Action, ActionResult
-from agentshield.shield import AgentShield
+from opshield.action import Action, ActionResult
+from opshield.shield import OpShield
 
 
 def shield_autogen_functions(
-    shield: AgentShield,
+    shield: OpShield,
     functions: dict[str, Callable],
     cost_map: dict[str, float] | None = None,
 ) -> dict[str, Callable]:
-    """Wrap AutoGen-compatible functions with AgentShield protection.
+    """Wrap AutoGen-compatible functions with OpShield protection.
 
     Returns a dict of wrapped functions with the same signatures.
     When a function is blocked, it returns a string explaining why
@@ -57,7 +57,7 @@ def shield_autogen_functions(
 
 
 def _wrap_function(
-    shield: AgentShield,
+    shield: OpShield,
     name: str,
     func: Callable,
     cost: float,
@@ -80,7 +80,7 @@ def _wrap_function(
         )
 
         if result.blocked:
-            return f"[BLOCKED by AgentShield] {result.block_reason}"
+            return f"[BLOCKED by OpShield] {result.block_reason}"
         if result.error:
             return f"[ERROR] {result.error}"
         return str(result.output) if result.output is not None else ""
@@ -103,7 +103,7 @@ class AutoGenShieldProxy:
 
     def __init__(
         self,
-        shield: AgentShield,
+        shield: OpShield,
         cost_map: dict[str, float] | None = None,
     ) -> None:
         self._shield = shield

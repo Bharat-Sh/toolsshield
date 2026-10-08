@@ -1,12 +1,12 @@
 """LangChain integration.
 
-Wraps LangChain tools so every invocation passes through AgentShield.
+Wraps LangChain tools so every invocation passes through OpShield.
 
 Usage:
-    from agentshield import AgentShield
-    from agentshield.integrations.langchain import ShieldedTool
+    from opshield import OpShield
+    from opshield.integrations.langchain import ShieldedTool
 
-    shield = AgentShield(budget=5.00)
+    shield = OpShield(budget=5.00)
 
     # Wrap any LangChain-style tool
     safe_tool = ShieldedTool(
@@ -25,23 +25,23 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from agentshield.action import Action, ActionResult
-from agentshield.shield import AgentShield
+from opshield.action import Action, ActionResult
+from opshield.shield import OpShield
 
 
 class ShieldedTool:
     """A tool wrapper compatible with LangChain's tool interface.
 
     This class mimics LangChain's BaseTool without importing langchain,
-    so agentshield has zero mandatory dependencies.
+    so opshield has zero mandatory dependencies.
 
     When LangChain calls .run() or ._run(), the call goes through
-    AgentShield's interceptor.
+    OpShield's interceptor.
     """
 
     def __init__(
         self,
-        shield: AgentShield,
+        shield: OpShield,
         name: str,
         func: Callable,
         description: str = "",
@@ -88,14 +88,14 @@ class ShieldedTool:
 
 
 def shield_langchain_tools(
-    shield: AgentShield,
+    shield: OpShield,
     tools: list[Any],
     cost_map: dict[str, float] | None = None,
 ) -> list[ShieldedTool]:
-    """Wrap a list of existing LangChain tools with AgentShield.
+    """Wrap a list of existing LangChain tools with OpShield.
 
     Args:
-        shield: The AgentShield instance.
+        shield: The OpShield instance.
         tools: List of LangChain BaseTool instances.
         cost_map: Optional {tool_name: cost_per_call} mapping.
 
