@@ -15,6 +15,7 @@ from agentshield.logger import ActionLogger
 from agentshield.ratelimit import RateLimiter, ToolLimit
 from agentshield.rules import RuleEngine
 from agentshield.snapshot import SnapshotStore
+from agentshield.retry import RetryPolicy, execute_with_retry
 from agentshield.webhooks import EventNotifier
 
 
@@ -133,6 +134,7 @@ class AgentShield:
         risk: RiskLevel | None = None,
         snapshot_state: Callable[[], Any] | None = None,
         restore_state: Callable[[Any], None] | None = None,
+        retry: RetryPolicy | None = None,
     ) -> Callable:
         def decorator(func: Callable) -> Callable:
             tool_name = func.__name__
@@ -151,7 +153,7 @@ class AgentShield:
                     cost=cost,
                 )
 
-                return self._execute(action, func, args, kwargs, cost, risk)
+                return self._execute(action, func, args, kwargs, cost, risk, retry)
 
             wrapper._shield_tool = True
             wrapper._tool_name = tool_name
@@ -171,6 +173,7 @@ class AgentShield:
         kwargs: dict,
         cost: float,
         risk_override: RiskLevel | None,
+        retry_policy: RetryPolicy | None = None,
     ) -> ActionResult:
         detected_risk, reasons = self._rules.evaluate(action)
         action.risk = risk_override or detected_risk
@@ -257,7 +260,10 @@ class AgentShield:
             return result
 
         try:
-            output = func(*args, **kwargs)
+            if retry_policy:
+                output, _errors = execute_with_retry(func, args, kwargs, retry_policy)
+            else:
+                output = func(*args, **kwargs)
             result = ActionResult(
                 action=action,
                 output=output,

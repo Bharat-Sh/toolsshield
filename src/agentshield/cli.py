@@ -7,6 +7,7 @@ import json
 import sys
 
 from agentshield.logger import ActionLogger
+from agentshield.policy import validate_policy
 
 
 def cmd_stats(args: argparse.Namespace) -> None:
@@ -46,6 +47,31 @@ def cmd_export(args: argparse.Namespace) -> None:
     logger.close()
 
 
+def cmd_validate(args: argparse.Namespace) -> None:
+    issues = validate_policy(args.policy_file)
+    if not issues:
+        print(f"Policy file is valid: {args.policy_file}")
+    else:
+        print(f"Issues found in {args.policy_file}:")
+        for issue in issues:
+            print(f"  - {issue}")
+        sys.exit(1)
+
+
+def cmd_dashboard(args: argparse.Namespace) -> None:
+    from agentshield.dashboard import start_dashboard
+    from agentshield.policy import load_policy
+
+    if args.db == "agentshield.db":
+        from agentshield import AgentShield
+        shield = AgentShield(db_path=args.db)
+    else:
+        shield = AgentShield(db_path=args.db)
+
+    print(f"AgentShield Dashboard: http://127.0.0.1:{args.port}")
+    start_dashboard(shield, port=args.port, background=False)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="agentshield",
@@ -65,13 +91,25 @@ def main() -> None:
     export_p = sub.add_parser("export", help="Export logs to JSON")
     export_p.add_argument("output", help="Output JSON file path")
 
+    validate_p = sub.add_parser("validate", help="Validate a policy file")
+    validate_p.add_argument("policy_file", help="Path to policy YAML/JSON file")
+
+    dashboard_p = sub.add_parser("dashboard", help="Start web dashboard")
+    dashboard_p.add_argument("--port", type=int, default=8080, help="Port (default 8080)")
+
     args = parser.parse_args()
 
     if not args.command:
         parser.print_help()
         sys.exit(1)
 
-    commands = {"stats": cmd_stats, "logs": cmd_logs, "export": cmd_export}
+    commands = {
+        "stats": cmd_stats,
+        "logs": cmd_logs,
+        "export": cmd_export,
+        "validate": cmd_validate,
+        "dashboard": cmd_dashboard,
+    }
     commands[args.command](args)
 
 
