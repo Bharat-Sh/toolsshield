@@ -12,8 +12,10 @@ from agentshield.action import Action, ActionResult, RiskLevel
 from agentshield.budget import BudgetTracker
 from agentshield.config import parse_config, rules_from_config
 from agentshield.logger import ActionLogger
+from agentshield.ratelimit import RateLimiter, ToolLimit
 from agentshield.rules import RuleEngine
 from agentshield.snapshot import SnapshotStore
+from agentshield.webhooks import EventNotifier
 
 
 class Mode(Enum):
@@ -49,6 +51,9 @@ class AgentShield:
         on_block: OnBlockCallback | None = None,
         max_snapshots: int = 1000,
         db_path: str | None = None,
+        global_rpm: int | None = None,
+        global_rph: int | None = None,
+        tool_limits: dict[str, ToolLimit] | None = None,
     ) -> None:
         self._mode = Mode(mode)
         self._auto_snapshot = auto_snapshot
@@ -59,20 +64,45 @@ class AgentShield:
         self._history: list[ActionResult] = []
         self._tool_states: dict[str, Any] = {}
         self._logger = ActionLogger(db_path) if db_path else None
+        self._rate_limiter = RateLimiter(
+            global_rpm=global_rpm,
+            global_rph=global_rph,
+            tool_limits=tool_limits or {},
+        )
+        self._notifier = EventNotifier()
 
     @classmethod
     def from_config(cls, config: dict[str, Any]) -> "AgentShield":
         """Create an AgentShield from a config dict."""
         parsed = parse_config(config)
+
+        tool_limits = {}
+        for name, lim in config.get("tool_limits", {}).items():
+            tool_limits[name] = ToolLimit(
+                rpm=lim.get("rpm"),
+                rph=lim.get("rph"),
+            )
+
         instance = cls(
             budget=parsed["budget"],
             auto_snapshot=parsed["auto_snapshot"],
             mode=parsed["mode"],
             max_snapshots=parsed["max_snapshots"],
             db_path=parsed.get("db_path"),
+            global_rpm=config.get("global_rpm"),
+            global_rph=config.get("global_rph"),
+            tool_limits=tool_limits or None,
         )
         for rule in parsed["extra_rules"]:
             instance._rules.add_rule(rule)
+
+        for wh in config.get("webhooks", []):
+            instance._notifier.add_webhook(
+                url=wh["url"],
+                events=set(wh.get("events", [])) or None,
+                headers=wh.get("headers", {}),
+            )
+
         return instance
 
     # -- Properties --
@@ -89,6 +119,10 @@ class AgentShield:
     def budget_summary(self) -> dict:
         return self._budget.summary()
 
+    @property
+    def notifier(self) -> EventNotifier:
+        return self._notifier
+
     # -- Tool decorator --
 
     def tool(
@@ -100,16 +134,6 @@ class AgentShield:
         snapshot_state: Callable[[], Any] | None = None,
         restore_state: Callable[[Any], None] | None = None,
     ) -> Callable:
-        """Decorator that wraps an agent tool with shield protection.
-
-        Args:
-            fn: The tool function.
-            cost: Estimated cost per call (in dollars).
-            risk: Override risk level (otherwise auto-detected by rules).
-            snapshot_state: Callable that returns current state for rollback.
-            restore_state: Callable that restores state from a snapshot.
-        """
-
         def decorator(func: Callable) -> Callable:
             tool_name = func.__name__
 
@@ -160,6 +184,9 @@ class AgentShield:
             self._history.append(result)
             if self._logger:
                 self._logger.log(result)
+            self._notifier.emit("action_blocked", {
+                "tool": action.tool_name, "reason": result.block_reason,
+            })
             return result
 
         if action.risk == RiskLevel.HIGH and self._on_block:
@@ -173,6 +200,9 @@ class AgentShield:
                 self._history.append(result)
                 if self._logger:
                     self._logger.log(result)
+                self._notifier.emit("action_blocked", {
+                    "tool": action.tool_name, "reason": result.block_reason,
+                })
                 return result
 
         if self._budget.would_exceed(cost):
@@ -185,6 +215,25 @@ class AgentShield:
             self._history.append(result)
             if self._logger:
                 self._logger.log(result)
+            self._notifier.emit("budget_exceeded", {
+                "tool": action.tool_name, "spent": self._budget.spent,
+                "budget": self._budget.budget,
+            })
+            return result
+
+        exceeded, rate_reason = self._rate_limiter.would_exceed(action.tool_name)
+        if exceeded:
+            result = ActionResult(
+                action=action,
+                blocked=True,
+                block_reason=rate_reason,
+            )
+            self._history.append(result)
+            if self._logger:
+                self._logger.log(result)
+            self._notifier.emit("rate_limited", {
+                "tool": action.tool_name, "reason": rate_reason,
+            })
             return result
 
         snapshot_id = None
@@ -201,6 +250,7 @@ class AgentShield:
                 cost=cost,
             )
             self._budget.record(action.id, action.tool_name, cost)
+            self._rate_limiter.record(action.tool_name)
             self._history.append(result)
             if self._logger:
                 self._logger.log(result)
@@ -221,17 +271,31 @@ class AgentShield:
                 snapshot_id=snapshot_id,
                 cost=cost,
             )
+            self._notifier.emit("action_error", {
+                "tool": action.tool_name, "error": str(e),
+            })
 
         self._budget.record(action.id, action.tool_name, cost)
+        self._rate_limiter.record(action.tool_name)
         self._history.append(result)
         if self._logger:
             self._logger.log(result)
+
+        if result.success:
+            self._notifier.emit("action_completed", {
+                "tool": action.tool_name, "cost": cost,
+            })
+
+        if self._budget.warning:
+            self._notifier.emit("budget_warning", {
+                "spent": self._budget.spent, "budget": self._budget.budget,
+            })
+
         return result
 
     # -- Rollback --
 
     def rollback(self, action_id: str | None = None) -> bool:
-        """Rollback to the snapshot before the given action (or the most recent one)."""
         if action_id:
             snap = self._snapshots.get_by_action(action_id)
         else:
@@ -252,7 +316,6 @@ class AgentShield:
     # -- History --
 
     def history(self) -> list[dict]:
-        """Return a summary of all actions taken."""
         results = []
         for r in self._history:
             results.append({
@@ -284,4 +347,5 @@ class AgentShield:
             "successful": total - blocked - errors,
             "snapshots": self._snapshots.count,
             "budget": self._budget.summary(),
+            "rate_limits": self._rate_limiter.stats(),
         }
