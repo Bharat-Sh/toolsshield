@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "agentshield"
-version = "0.1.0"
-description = "Agent operations platform: rollback, cost control, and testing for AI agents."
+version = "0.2.0"
+description = "AI agent safety platform: rollback, cost control, circuit breakers, tracing, compliance, and chaos testing."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
@@ -15,6 +15,7 @@ authors = [
 keywords = [
     "ai", "agent", "safety", "guardrails", "rollback", "testing",
     "cost-control", "rate-limiting", "multi-agent", "observability",
+    "circuit-breaker", "tracing", "chaos-engineering", "compliance",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -53,6 +54,7 @@ agentshield = "agentshield.cli:main"
 Homepage = "https://github.com/aigraf/agentshield"
 Documentation = "https://github.com/aigraf/agentshield#readme"
 Issues = "https://github.com/aigraf/agentshield/issues"
+Changelog = "https://github.com/aigraf/agentshield/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/agentshield"]

@@ -2,24 +2,29 @@
 
 **The safety layer between AI agents and the real world.**
 
-AgentShield intercepts every tool call your AI agent makes and provides rollback, cost control, rate limiting, and testing — so agents can work autonomously without causing damage.
+AgentShield intercepts every tool call your AI agent makes and provides rollback, cost control, rate limiting, circuit breakers, approval workflows, distributed tracing, chaos testing, and compliance reporting — so agents can work autonomously without causing damage.
 
 **Zero mandatory dependencies. One `pip install`. Works with every major agent framework.**
 
-## Why AgentShield?
+> **Market context:** With Guardrails AI acquired by Harvey (Sept 2026) and the AI agent safety market projected to grow from $610M to $6.85B at 41% CAGR, AgentShield fills the gap as a comprehensive, framework-agnostic agent operations platform.
 
-AI agents are powerful but dangerous. They can delete databases, overspend budgets, and send wrong emails — all in seconds. AgentShield solves this:
+## Why AgentShield?
 
 | Problem | AgentShield Solution |
 |---------|---------------------|
 | Agent runs `DROP TABLE` | Auto-blocked by risk classification |
-| Agent overspends API budget | Budget limits with per-action cost tracking |
+| Agent overspends API budget | Budget limits + cost forecasting |
 | Want to test without side effects | Test mode simulates everything |
 | Agent made a mistake | One-call rollback via state snapshots |
 | Agent spams an API | Rate limiting (RPM/RPH per tool) |
-| Need audit trail | SQLite logging + Prometheus metrics |
-| Multiple agents, different rules | AgentPool with isolated budgets per agent |
+| Tool keeps failing | Circuit breaker auto-disables it |
+| Need human approval | Approval workflows with timeout/escalation |
+| Different agents, different rules | AgentPool with isolated budgets + capabilities |
 | Sensitive data in logs | Automatic PII/secret masking |
+| Need audit trail | SQLite logging + Prometheus + compliance reports |
+| Test agent resilience | Chaos engineering with fault injection |
+| Track every action | OpenTelemetry-compatible distributed tracing |
+| Evaluate agent quality | Safety/performance scoring (A-F grades) |
 
 ## Install
 
@@ -63,7 +68,7 @@ print(result.block_reason)  # "CRITICAL risk blocked: Destructive SQL detected"
 shield.rollback()
 ```
 
-## Features
+## Core Features
 
 ### Policy-as-Code
 
@@ -104,7 +109,6 @@ researcher = pool.register("researcher", budget=3.00)
 coder = pool.register("coder", budget=10.00)
 reviewer = pool.register("reviewer", budget=1.00, mode="test")
 
-# Each agent has isolated budget, rules, and audit trail
 pool.stats()        # Aggregated view across all agents
 pool.over_budget()  # ["researcher"] if over budget
 ```
@@ -124,7 +128,7 @@ shield = AgentShield(
 ### Retry with Backoff
 
 ```python
-from agentshield import AgentShield, RetryPolicy
+from agentshield import RetryPolicy
 
 policy = RetryPolicy(max_retries=3, backoff_base=1.0, jitter=0.5)
 
@@ -136,93 +140,123 @@ def flaky_api(query: str) -> str:
 ### Sensitive Data Masking
 
 ```python
-from agentshield import AgentShield, DataMasker
+from agentshield import DataMasker
 
 masker = DataMasker()
-shield = AgentShield(budget=10.0, db_path="audit.db")
 shield.set_masker(masker)
 
 # Emails, API keys, credit cards, SSNs, JWTs are auto-masked in logs
-# Custom patterns:
 masker.add_pattern("project_id", r"PROJ-\d{6}", "PROJ-******")
 ```
 
-### Webhook Notifications
+## Enterprise Safety
+
+### Circuit Breaker
+
+Auto-disable tools that fail repeatedly (CLOSED → OPEN → HALF_OPEN):
 
 ```python
-shield.notifier.add_webhook(
-    url="https://hooks.slack.com/services/xxx",
-    events={"action_blocked", "budget_exceeded"},
-)
+from agentshield import CircuitBreaker
 
-shield.notifier.on("action_blocked", lambda event, data: print(f"Alert: {data}"))
+cb = CircuitBreaker(failure_threshold=5, reset_timeout=60.0)
+shield.set_circuit_breaker(cb)
+# After 5 consecutive failures, the tool is auto-disabled for 60s
+# Then one probe call is allowed (HALF_OPEN) to test recovery
 ```
 
-### Async Support
+### Human-in-the-Loop Approval
 
 ```python
-from agentshield import AsyncAgentShield
+from agentshield import ApprovalManager
 
-shield = AsyncAgentShield(budget=5.00)
+approver = ApprovalManager(default_timeout=30.0)
+approver.require_approval("send_email", timeout=60.0)
+approver.require_approval_for_risk("HIGH")
+shield.set_approval(approver)
 
-@shield.async_tool(cost=0.05)
-async def async_query(sql: str) -> str:
-    return await db.execute(sql)
+# From another thread or webhook handler:
+approver.approve(request_id, approver="admin@company.com")
 ```
 
-### Action Replay (Debug/Audit)
+### Agent Capabilities / Permissions
+
+Fine-grained tool access control per agent:
 
 ```python
-from agentshield.replay import ActionReplayer
+from agentshield import CapabilityManager
 
-replayer = ActionReplayer(db_path="audit.db", executors={"run_sql": my_fn})
-report = replayer.replay_all(shield)
-print(f"Match rate: {report.success_rate:.0%}")
+caps = CapabilityManager()
+caps.grant("researcher", allow=["search", "read_file"])
+caps.grant("intern_bot", deny=["delete_record", "send_email"])
+caps.add_constraint("coder", "run_sql", args_deny=["DROP", "TRUNCATE"])
+shield.set_capabilities(caps)
 ```
 
-## Framework Integrations
-
-### OpenAI Agents SDK
+### Compliance & Audit Reports
 
 ```python
-from agentshield.integrations.openai_agents import OpenAIShieldMiddleware
+from agentshield import ComplianceReporter
 
-middleware = OpenAIShieldMiddleware(shield=shield, executors={...}, cost_map={...})
-result = middleware.handle_tool_call(tool_call)
+reporter = ComplianceReporter(db_path="audit.db")
+report = reporter.generate_report(start="2026-01-01", end="2026-12-31")
+print(report.summary)          # Text summary with anomaly detection
+reporter.export_json("audit.json")
+html = reporter.to_html()      # Full HTML report
 ```
 
-### Anthropic Claude SDK
+## Observability
+
+### Distributed Tracing
+
+OpenTelemetry-compatible span system:
 
 ```python
-from agentshield.integrations.anthropic_sdk import AnthropicShieldMiddleware
+from agentshield import Tracer
 
-middleware = AnthropicShieldMiddleware(shield=shield, executors={...})
-result = middleware.handle_tool_use(tool_use_block)
-tool_result = middleware.format_tool_result(result)  # Ready for Messages API
+tracer = Tracer(service_name="my-agent")
+shield.set_tracer(tracer)
+
+# Every tool call automatically generates spans
+# Nested spans for complex workflows:
+with tracer.span("data_pipeline") as parent:
+    with tracer.span("extract", parent=parent):
+        extract_data()
+    with tracer.span("transform", parent=parent):
+        transform_data()
+
+tracer.export_json("traces.json")  # JSON export
+tracer.export_otlp()               # OTLP-compatible dict
 ```
 
-### LangChain
+### Cost Forecasting
 
 ```python
-from agentshield.integrations.langchain import shield_langchain_tools
-shielded = shield_langchain_tools(shield, existing_tools)
+from agentshield import CostForecaster
+
+forecaster = CostForecaster(shield)
+report = forecaster.forecast()
+print(report.burn_rate_per_hour)       # $/hour
+print(report.estimated_exhaustion)     # datetime
+print(report.estimated_actions_remaining)
+print(report.trend)                    # "increasing" / "stable" / "decreasing"
 ```
 
-### CrewAI
+### Agent Scoring & Benchmarking
 
 ```python
-from agentshield.integrations.crewai import shield_crewai_tools
-shielded = shield_crewai_tools(shield, crew_tools, cost_map={"search": 0.05})
+from agentshield import AgentScorer, PoolScorer
+
+scorer = AgentScorer(shield, agent_name="my-bot")
+report = scorer.score()
+print(report.overall_score)    # 0-100
+print(report.grade)            # A/B/C/D/F
+print(report.safety_score)     # Safety dimension
+print(report.reliability_score)
+
+# Rank all agents in a pool
+pool_scorer = PoolScorer(pool)
+print(pool_scorer.summary())   # Ranked leaderboard
 ```
-
-### Microsoft AutoGen
-
-```python
-from agentshield.integrations.autogen import shield_autogen_functions
-wrapped = shield_autogen_functions(shield, {"search": search_fn}, cost_map={...})
-```
-
-## Monitoring
 
 ### Web Dashboard
 
@@ -241,6 +275,94 @@ start_metrics_server(shield, port=9090)
 ```
 
 Exports: `agentshield_actions_total`, `agentshield_actions_blocked_total`, `agentshield_budget_spent_dollars`, per-tool and per-agent labels.
+
+### Webhook Notifications
+
+```python
+shield.notifier.add_webhook(
+    url="https://hooks.slack.com/services/xxx",
+    events={"action_blocked", "budget_exceeded"},
+)
+
+shield.notifier.on("action_blocked", lambda event, data: print(f"Alert: {data}"))
+```
+
+## Resilience Testing
+
+### Chaos Engineering
+
+Test agent resilience with controlled fault injection:
+
+```python
+from agentshield import ChaosEngine, FaultType
+
+chaos = ChaosEngine()
+shield.set_chaos(chaos)
+
+# Random failures (20% of calls)
+chaos.add_fault("search_api", FaultType.ERROR, probability=0.2)
+
+# Latency injection
+chaos.add_fault("slow_api", FaultType.LATENCY, latency_ms=2000)
+
+# Conditional faults
+chaos.add_fault("db_query", FaultType.ERROR,
+                condition=lambda args: "prod" in str(args))
+
+# Wildcard — affect all tools
+chaos.add_fault("*", FaultType.LATENCY, latency_ms=500, probability=0.1)
+```
+
+### Action Replay
+
+```python
+from agentshield.replay import ActionReplayer
+
+replayer = ActionReplayer(db_path="audit.db", executors={"run_sql": my_fn})
+report = replayer.replay_all(shield)
+print(f"Match rate: {report.success_rate:.0%}")
+```
+
+### Async Support
+
+```python
+from agentshield import AsyncAgentShield
+
+shield = AsyncAgentShield(budget=5.00)
+
+@shield.async_tool(cost=0.05)
+async def async_query(sql: str) -> str:
+    return await db.execute(sql)
+```
+
+## Framework Integrations
+
+| Framework | Module | Pattern |
+|-----------|--------|---------|
+| OpenAI Agents SDK | `integrations.openai_agents` | Middleware |
+| Anthropic Claude | `integrations.anthropic_sdk` | Middleware |
+| LangChain | `integrations.langchain` | Tool wrapper |
+| CrewAI | `integrations.crewai` | Tool wrapper |
+| Microsoft AutoGen | `integrations.autogen` | Function wrapper |
+
+```python
+# OpenAI
+from agentshield.integrations.openai_agents import OpenAIShieldMiddleware
+middleware = OpenAIShieldMiddleware(shield=shield, executors={...})
+
+# Anthropic
+from agentshield.integrations.anthropic_sdk import AnthropicShieldMiddleware
+middleware = AnthropicShieldMiddleware(shield=shield, executors={...})
+
+# LangChain
+from agentshield.integrations.langchain import shield_langchain_tools
+
+# CrewAI
+from agentshield.integrations.crewai import shield_crewai_tools
+
+# AutoGen
+from agentshield.integrations.autogen import shield_autogen_functions
+```
 
 ## CLI
 
@@ -266,17 +388,30 @@ agentshield dashboard --port 8080    # Start web dashboard
 
 ```
 Agent → AgentShield → Tool
+         ├── Capability Check (permissions)
+         ├── Circuit Breaker (fail-fast)
          ├── Risk Classification (rules engine)
-         ├── Budget Check
+         ├── Approval Workflow (human-in-the-loop)
+         ├── Budget Check + Forecast
          ├── Rate Limit Check
          ├── Snapshot (for rollback)
-         ├── Data Masking (for logs)
+         ├── Chaos Injection (testing)
          ├── Execute (or simulate in test mode)
          ├── Retry (on failure, with backoff)
+         ├── Data Masking (for logs)
          ├── Log to SQLite
          ├── Emit webhook/callback events
+         ├── Record span (distributed tracing)
+         ├── Agent Scoring
          └── Prometheus metrics
 ```
+
+## Stats
+
+- **32+ Python modules**, 107+ tests
+- **Zero mandatory dependencies**
+- **5 framework integrations**
+- Works with Python 3.11+
 
 ## License
 
