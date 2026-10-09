@@ -1,6 +1,19 @@
-# OpShield
+<p align="center">
+  <img src="https://raw.githubusercontent.com/alicelik-games/opshield/main/assets/logo.svg" alt="OpShield Logo" width="180"/>
+</p>
 
-**The safety layer between AI agents and the real world.**
+<h1 align="center">OpShield</h1>
+
+<p align="center">
+  <strong>The safety layer between AI agents and the real world.</strong>
+</p>
+
+<p align="center">
+  <a href="https://pypi.org/project/opshield/"><img src="https://img.shields.io/pypi/v/opshield?color=blue" alt="PyPI"/></a>
+  <a href="https://github.com/alicelik-games/opshield/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License"/></a>
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.11+-blue" alt="Python"/></a>
+  <a href="https://pypi.org/project/opshield/"><img src="https://img.shields.io/pypi/dm/opshield?color=orange" alt="Downloads"/></a>
+</p>
 
 OpShield intercepts every tool call your AI agent makes and provides rollback, cost control, rate limiting, circuit breakers, approval workflows, distributed tracing, chaos testing, and compliance reporting — so agents can work autonomously without causing damage.
 
