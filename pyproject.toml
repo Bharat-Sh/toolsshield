@@ -51,7 +51,7 @@ dev = ["pytest>=7.0", "ruff>=0.1"]
 opshield = "opshield.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/alicelik-games/opshield"
+Homepage = "https://alicelik-games.github.io/opshield/"
 Documentation = "https://github.com/alicelik-games/opshield#readme"
 Issues = "https://github.com/alicelik-games/opshield/issues"
 Changelog = "https://github.com/alicelik-games/opshield/blob/main/CHANGELOG.md"
