@@ -50,4 +50,4 @@ __all__ = [
     "validate_policy",
     "rules_from_config",
 ]
-__version__ = "0.2.0"
+__version__ = "0.2.1"
