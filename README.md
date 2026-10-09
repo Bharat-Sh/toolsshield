@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/alicelik-games/opshield/main/assets/logo.svg" alt="OpShield Logo" width="180"/>
+  <img src="https://raw.githubusercontent.com/alicelik-games/opshield/main/assets/logo.png" alt="OpShield Logo" width="180"/>
 </p>
 
 <h1 align="center">OpShield</h1>
